@@ -1,0 +1,82 @@
+import tkinter as tk
+from tkinter import ttk, PhotoImage
+import json
+import webbrowser
+
+# Загрузка данных о фильмах
+with open("movies.json", "r", encoding="utf-8") as file:
+    movies_data = json.load(file)
+
+class MovieApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("ФильмПроводник")
+        self.current_genre = None
+        self.current_movie_index = 0
+
+        # UI элементы
+        self.label_title = tk.Label(root, text="Выберите жанр фильма", font=("Arial", 18))
+        self.label_title.pack()
+
+        # Кнопки для жанров
+        self.genre_buttons = []
+        for genre in movies_data:
+            btn = ttk.Button(root, text=genre['genre'], command=lambda g=genre: self.show_movies(g))
+            btn.pack(pady=5)
+            self.genre_buttons.append(btn)
+
+        # Элементы для показа фильмов
+        self.movie_poster = tk.Label(root)
+        self.movie_poster.pack()
+
+        self.movie_info = tk.Label(root, text="", wraplength=400, justify="center")
+        self.movie_info.pack()
+
+        self.trailer_button = ttk.Button(root, text="Смотреть трейлер", command=self.play_trailer)
+        self.trailer_button.pack()
+        
+        self.nav_buttons_frame = tk.Frame(root)
+        self.nav_buttons_frame.pack()
+
+        self.prev_button = ttk.Button(self.nav_buttons_frame, text="Назад", command=self.prev_movie)
+        self.next_button = ttk.Button(self.nav_buttons_frame, text="Следующий", command=self.next_movie)
+
+    def show_movies(self, genre):
+        self.current_genre = genre
+        self.current_movie_index = 0
+        self.display_movie()
+
+    def display_movie(self):
+        movie = self.current_genre['movies'][self.current_movie_index]
+        # Отображение постера
+        poster_image = PhotoImage(file=movie['poster'])  # Поддержка PNG
+        self.movie_poster.config(image=poster_image)
+        self.movie_poster.image = poster_image
+        
+        # Отображение информации
+        self.movie_info.config(text=f"{movie['title']}\n\n{movie['description']}")
+        self.trailer_button.config(state="normal")
+        
+        # Отображение кнопок навигации
+        self.prev_button.pack(side="left", padx=10)
+        self.next_button.pack(side="right", padx=10)
+
+    def play_trailer(self):
+        movie = self.current_genre['movies'][self.current_movie_index]
+        webbrowser.open(movie['trailer'])  # Открытие трейлера в браузере
+
+    def prev_movie(self):
+        if self.current_movie_index > 0:
+            self.current_movie_index -= 1
+            self.display_movie()
+
+    def next_movie(self):
+        if self.current_movie_index < len(self.current_genre['movies']) - 1:
+            self.current_movie_index += 1
+            self.display_movie()
+
+# Создание приложения
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = MovieApp(root)
+    root.mainloop()
